@@ -167,7 +167,7 @@ class WebAudioFontPlayer {
         } else {
             volume = 1.0
         }
-        var zone = this.findZone(audioContext, preset, pitch)
+        var zone = WebAudioFontPlayer.findZone(audioContext, preset, pitch)
         if (!(zone.buffer)) {
             console.log('empty buffer ', zone)
             return
