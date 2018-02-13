@@ -4,6 +4,7 @@ module.exports = {
         "browser": true
     },
     "parserOptions": {
+        "ecmaVersion": 2017,
         "ecmaFeatures": {
             "experimentalObjectRestSpread": true
         }

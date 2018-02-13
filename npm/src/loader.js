@@ -1,5 +1,3 @@
-'use strict'
-
 class WebAudioFontLoader {
     constructor(player) {
         this.player = player
@@ -192,76 +190,16 @@ class WebAudioFontLoader {
         ]
     }
 
-    startLoad(audioContext, filePath, variableName) {
-        if (window[variableName]) {
+    async load(audioContext, filePath, variableName) {
+        if (window[variableName] || this.cached.indexOf(variableName) !== -1) {
             return
         }
-        for (var i = 0; i < this.cached.length; i++) {
-            if (this.cached[i].variableName == variableName) {
-                return
-            }
-        }
-        this.cached.push({
-            filePath,
-            variableName
+        this.cached.push(variableName)
+        const response = await fetch(filePath, {
+            mode: 'cors'
         })
-        var r = document.createElement('script')
-        r.setAttribute('type', 'text/javascript')
-        r.setAttribute('src', filePath)
-        document.getElementsByTagName('head')[0].appendChild(r)
-        this.decodeAfterLoading(audioContext, variableName)
-    }
-
-    decodeAfterLoading(audioContext, variableName) {
-        this.waitOrFinish(variableName, () => {
-            this.player.adjustPreset(audioContext, window[variableName])
-        })
-    }
-
-    waitOrFinish(variableName, onFinish) {
-        if (window[variableName]) {
-            onFinish()
-        } else {
-            setTimeout(() => {
-                this.waitOrFinish(variableName, onFinish)
-            }, 111)
-        }
-    }
-
-    loaded(variableName) {
-        if (!(window[variableName])) {
-            return false
-        }
-        var preset = window[variableName]
-        for (var i = 0; i < preset.zones.length; i++) {
-            if (!(preset.zones[i].buffer)) {
-                return false
-            }
-        }
-        return true
-    }
-
-    progress() {
-        if (this.cached.length > 0) {
-            for (var k = 0; k < this.cached.length; k++) {
-                if (!this.loaded(this.cached[k].variableName)) {
-                    return k / this.cached.length
-                }
-            }
-            return 1
-        } else {
-            return 1
-        }
-    }
-
-    waitLoad(onFinish) {
-        if (this.progress() >= 1) {
-            onFinish()
-        } else {
-            setTimeout(() => {
-                this.waitLoad(onFinish)
-            }, 333)
-        }
+        const json = await response.json()
+        this.player.adjustPreset(audioContext, json)
     }
 
     instrumentInfo(n) {
@@ -269,7 +207,7 @@ class WebAudioFontLoader {
         const p = Number(key.substr(0, 3))
         return {
             variable: '_tone_' + key,
-            url: 'https://surikov.github.io/webaudiofontdata/sound/' + key + '.js',
+            url: 'https://jjyyxx.github.io/webaudiofontdata/data/' + key + '.json',
             title: this.instrumentNamesArray[p]
         }
     }
@@ -279,7 +217,7 @@ class WebAudioFontLoader {
         const p = Number(key.substr(0, 2))
         return {
             variable: '_drum_' + key,
-            url: 'https://surikov.github.io/webaudiofontdata/sound/128' + key + '.js',
+            url: 'https://jjyyxx.github.io/webaudiofontdata/data/128' + key + '.json',
             pitch: p,
             title: this.instrumentNamesArray[p]
         }
