@@ -8,11 +8,13 @@ class WebAudioFontLoader {
         this.store = undefined
         req.onsuccess = () => {
             this.db = req.result
+            this.trans = this.db.transaction(['audiofont'], 'readwrite')
+            this.store = this.trans.objectStore('audiofont')
+        }
+        req.onupgradeneeded = () => {
             if (!this.db.objectStoreNames.contains('audiofont')) {
                 this.db.createObjectStore('audiofont', { keyPath: 'variableName' })
             }
-            this.trans = this.db.transaction(['audiofont'], 'readwrite')
-            this.store = this.trans.objectStore('audiofont')
         }
     }
 
