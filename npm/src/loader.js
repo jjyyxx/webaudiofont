@@ -227,3 +227,7 @@ class WebAudioFontLoader {
 if (typeof window !== 'undefined') {
     window.WebAudioFontLoader = WebAudioFontLoader
 }
+
+if (typeof module === 'object' && module.exports) {
+    module.exports = WebAudioFontLoader;
+}

@@ -271,6 +271,10 @@ if (typeof window !== 'undefined') {
     window.WebAudioFontLoader = WebAudioFontLoader
 }
 
+if (typeof module === 'object' && module.exports) {
+    module.exports = WebAudioFontLoader;
+}
+
 },{}],3:[function(require,module,exports){
 'use strict'
 console.log('WebAudioFont Player v2.71');
