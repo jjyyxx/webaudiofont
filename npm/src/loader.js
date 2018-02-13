@@ -4,14 +4,16 @@ class WebAudioFontLoader {
         this.cached = []
         const req = indexedDB.open('audiofont', 1)
         this.db = undefined
+        this.trans = undefined
+        this.store = undefined
         req.onsuccess = () => {
             this.db = req.result
+            if (!this.db.objectStoreNames.contains('audiofont')) {
+                this.db.createObjectStore('audiofont', { keyPath: 'variableName' })
+            }
+            this.trans = this.db.transaction(['audiofont'], 'readwrite')
+            this.store = this.trans.objectStore('audiofont')
         }
-        if (!this.db.objectStoreNames.contains('audiofont')) {
-            this.db.createObjectStore('audiofont', { keyPath: 'variableName' })
-        }
-        this.trans = this.db.transaction(['audiofont'], 'readwrite')
-        this.store = this.trans.objectStore('audiofont')
     }
 
     async load(audioContext, filePath, variableName) {
