@@ -8,7 +8,6 @@ class WebAudioFontPlayer {
         this.onCacheFinish = null
         this.onCacheProgress = null
         this.afterTime = 0.05
-        this.nearZero = 0.000001
     }
 
     static createChannel(audioContext) {
@@ -117,10 +116,10 @@ class WebAudioFontPlayer {
     }
 
     static noZeroVolume(n) {
-        if (n > this.nearZero) {
+        if (n > WebAudioFontPlayer.nearZero) {
             return n
         } else {
-            return this.nearZero
+            return WebAudioFontPlayer.nearZero
         }
     }
 
@@ -294,7 +293,7 @@ class WebAudioFontPlayer {
         for (var i = 0; i < this.envelopes.length; i++) {
             var e = this.envelopes[i]
             e.gain.cancelScheduledValues(0)
-            e.gain.setValueAtTime(this.nearZero, audioContext.currentTime)
+            e.gain.setValueAtTime(WebAudioFontPlayer.nearZero, audioContext.currentTime)
             e.when = -1
             try {
                 e.audioBufferSourceNode.disconnect()
@@ -304,6 +303,8 @@ class WebAudioFontPlayer {
         }
     }
 }
+
+WebAudioFontPlayer.nearZero = 0.000001
 
 if (typeof module === 'object' && module.exports) {
     module.exports = WebAudioFontPlayer
