@@ -75,21 +75,20 @@ class WebAudioFontLoader {
         //     })
         // } catch (error) {
         const cache = localStorage.getItem(variableName)
-        if (cache) {
-            return JSON.parse(cache)
+        if (cache || this.cached.indexOf(variableName) !== -1) {
+            window.fonts[variableName] = JSON.parse(cache)
+        } else {
+            this.cached.push(variableName)
+            const response = await fetch(filePath, {
+                mode: 'cors'
+            })
+            const json = await response.json()
+            // this.store.add(json, variableName)
+            localStorage.setItem(variableName, JSON.stringify(json))
+            this.player.constructor.adjustPreset(audioContext, json)
+            window.fonts[variableName] = json
         }
-        if (this.cached.indexOf(variableName) !== -1) {
-            return
-        }
-        this.cached.push(variableName)
-        const response = await fetch(filePath, {
-            mode: 'cors'
-        })
-        const json = await response.json()
-        // this.store.add(json, variableName)
-        localStorage.setItem(variableName, JSON.stringify(json))
-        this.player.constructor.adjustPreset(audioContext, json)
-        return json
+        return variableName
         // }
     }
 }
