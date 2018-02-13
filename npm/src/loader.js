@@ -1,3 +1,4 @@
+const Player = require('./player')
 class WebAudioFontLoader {
     constructor(player) {
         this.player = player
@@ -44,7 +45,7 @@ class WebAudioFontLoader {
         const json = await response.json()
         // this.store.add(json, variableName)
         localStorage.setItem(variableName, JSON.stringify(json))
-        this.player.adjustPreset(audioContext, json)
+        Player.adjustPreset(audioContext, json)
         return json
         // }
     }
