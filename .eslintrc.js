@@ -1,7 +1,8 @@
 module.exports = {
     "env": {
         "es6": true,
-        "browser": true
+        "browser": true,
+        "node": true
     },
     "parserOptions": {
         "ecmaVersion": 2017,
@@ -15,6 +16,7 @@ module.exports = {
             "error",
             4
         ],
+        "no-console": 0,
         "linebreak-style": [
             "error",
             "windows"
