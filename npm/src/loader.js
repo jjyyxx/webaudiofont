@@ -199,6 +199,7 @@ class WebAudioFontLoader {
             mode: 'cors'
         })
         const json = await response.json()
+        window[variableName] = json
         this.player.adjustPreset(audioContext, json)
     }
 
