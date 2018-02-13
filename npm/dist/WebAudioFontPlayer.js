@@ -42,7 +42,6 @@ if (typeof window !== 'undefined') {
 }
 
 },{}],2:[function(require,module,exports){
-const Player = require('./player')
 class WebAudioFontLoader {
     constructor(player) {
         this.player = player
@@ -89,7 +88,7 @@ class WebAudioFontLoader {
         const json = await response.json()
         // this.store.add(json, variableName)
         localStorage.setItem(variableName, JSON.stringify(json))
-        Player.adjustPreset(audioContext, json)
+        this.player.constructor.adjustPreset(audioContext, json)
         return json
         // }
     }
@@ -103,7 +102,7 @@ if (typeof module === 'object' && module.exports) {
     module.exports = WebAudioFontLoader
 }
 
-},{"./player":3}],3:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 const WebAudioFontLoader = require('./loader')
 const WebAudioFontChannel = require('./channel')
 const WebAudioFontReverberator = require('./reverberator')
