@@ -1,67 +1,67 @@
-const WebAudioFontLoader = require('./loader')
-const WebAudioFontChannel = require('./channel')
-const WebAudioFontReverberator = require('./reverberator')
-class WebAudioFontPlayer {
+const Loader = require('./loader')
+const Channel = require('./channel')
+const Reverberator = require('./reverberator')
+class Player {
     constructor() {
         this.envelopes = []
-        this.loader = new WebAudioFontLoader(this)
+        this.loader = new Loader(this)
         this.onCacheFinish = null
         this.onCacheProgress = null
         this.afterTime = 0.05
     }
 
-    static createChannel(audioContext) {
-        return new WebAudioFontChannel(audioContext)
+    static createChannel(ctx) {
+        return new Channel(ctx)
     }
 
-    static createReverberator(audioContext) {
-        return new WebAudioFontReverberator(audioContext)
+    static async createReverberator(ctx) {
+        return await Reverberator.create(ctx)
     }
 
-    queueChord(audioContext, target, preset, when, pitches, duration, volume, slides) {
+    queueChord(ctx, target, preset, when, pitches, duration, volume, slides) {
         for (var i = 0; i < pitches.length; i++) {
-            this.queueWaveTable(audioContext, target, preset, when, pitches[i], duration, volume - Math.random() * 0.01, slides)
+            this.queueWaveTable(ctx, target, preset, when, pitches[i], duration, volume - Math.random() * 0.01, slides)
         }
     }
 
-    queueStrumUp(audioContext, target, preset, when, pitches, duration, volume, slides) {
+    queueStrumUp(ctx, target, preset, when, pitches, duration, volume, slides) {
         pitches.sort((a, b) => b - a)
-        this.queueStrum(audioContext, target, preset, when, pitches, duration, volume, slides)
+        this.queueStrum(ctx, target, preset, when, pitches, duration, volume, slides)
     }
 
-    queueStrumDown(audioContext, target, preset, when, pitches, duration, volume, slides) {
+    queueStrumDown(ctx, target, preset, when, pitches, duration, volume, slides) {
         pitches.sort((a, b) => a - b)
-        this.queueStrum(audioContext, target, preset, when, pitches, duration, volume, slides)
+        this.queueStrum(ctx, target, preset, when, pitches, duration, volume, slides)
     }
 
-    queueStrum(audioContext, target, preset, when, pitches, duration, volume, slides) {
+    queueStrum(ctx, target, preset, when, pitches, duration, volume, slides) {
         if (volume) {
             volume = 1.0 * volume
         } else {
             volume = 1.0
         }
-        if (when < audioContext.currentTime) {
-            when = audioContext.currentTime
+        if (when < ctx.currentTime) {
+            when = ctx.currentTime
         }
         for (var i = 0; i < pitches.length; i++) {
-            this.queueWaveTable(audioContext, target, preset, when + i * 0.01, pitches[i], duration, volume - Math.random() * 0.01, slides)
+            this.queueWaveTable(ctx, target, preset, when + i * 0.01, pitches[i], duration, volume - Math.random() * 0.01, slides)
             volume = 0.9 * volume
         }
     }
 
-    queueSnap(audioContext, target, preset, when, pitches, duration, volume, slides) {
+    queueSnap(ctx, target, preset, when, pitches, duration, volume, slides) {
         volume = 1.5 * (volume | 1.0)
         duration = 0.05
-        this.queueChord(audioContext, target, preset, when, pitches, duration, volume, slides)
+        this.queueChord(ctx, target, preset, when, pitches, duration, volume, slides)
     }
 
-    queueWaveTable(audioContext, target, preset, when, pitch, duration, volume, slides) {
+    queueWaveTable(ctx, target, preset, when, pitch, duration, volume, slides) {
         if (volume) {
             volume = 1.0 * volume
         } else {
             volume = 1.0
         }
-        var zone = WebAudioFontPlayer.findZone(audioContext, preset, pitch)
+        var zone = Player.findZone(ctx, preset, pitch)
         if (!(zone.buffer)) {
             console.log('empty buffer ', zone)
             return
@@ -70,8 +70,8 @@ class WebAudioFontPlayer {
         var playbackRate = 1.0 * Math.pow(2, (100.0 * pitch - baseDetune) / 1200.0)
         // var sampleRatio = zone.sampleRate / audioContext.sampleRate
         var startWhen = when
-        if (startWhen < audioContext.currentTime) {
-            startWhen = audioContext.currentTime
+        if (startWhen < ctx.currentTime) {
+            startWhen = ctx.currentTime
         }
         var waveDuration = duration + this.afterTime
         var loop = true
@@ -83,9 +83,9 @@ class WebAudioFontPlayer {
                 waveDuration = zone.buffer.duration / playbackRate
             }
         }
-        var envelope = this.findEnvelope(audioContext, target, startWhen, waveDuration)
-        this.setupEnvelope(audioContext, envelope, zone, volume, startWhen, waveDuration, duration)
-        envelope.audioBufferSourceNode = audioContext.createBufferSource()
+        var envelope = this.findEnvelope(ctx, target, startWhen, waveDuration)
+        this.setupEnvelope(ctx, envelope, zone, volume, startWhen, waveDuration, duration)
+        envelope.audioBufferSourceNode = ctx.createBufferSource()
         envelope.audioBufferSourceNode.playbackRate.value = playbackRate
         if (slides) {
             if (slides.length > 0) {
@@ -116,15 +116,15 @@ class WebAudioFontPlayer {
     }
 
     static noZeroVolume(n) {
-        if (n > WebAudioFontPlayer.nearZero) {
+        if (n > Player.nearZero) {
             return n
         } else {
-            return WebAudioFontPlayer.nearZero
+            return Player.nearZero
         }
     }
 
-    setupEnvelope(audioContext, envelope, zone, volume, when, sampleDuration, noteDuration) {
-        envelope.gain.setValueAtTime(WebAudioFontPlayer.noZeroVolume(0), audioContext.currentTime)
+    setupEnvelope(ctx, envelope, zone, volume, when, sampleDuration, noteDuration) {
+        envelope.gain.setValueAtTime(Player.noZeroVolume(0), ctx.currentTime)
         var lastTime = 0
         var lastVolume = 0
         var duration = noteDuration
@@ -160,21 +160,21 @@ class WebAudioFontPlayer {
             ]
         }
         envelope.gain.cancelScheduledValues(when)
-        envelope.gain.setValueAtTime(WebAudioFontPlayer.noZeroVolume(ahdsr[0].volume * volume), when)
+        envelope.gain.setValueAtTime(Player.noZeroVolume(ahdsr[0].volume * volume), when)
         for (var i = 0; i < ahdsr.length; i++) {
             if (ahdsr[i].duration > 0) {
                 if (ahdsr[i].duration + lastTime > duration) {
                     var r = 1 - (ahdsr[i].duration + lastTime - duration) / ahdsr[i].duration
                     var n = lastVolume - r * (lastVolume - ahdsr[i].volume)
-                    envelope.gain.linearRampToValueAtTime(WebAudioFontPlayer.noZeroVolume(volume * n), when + duration)
+                    envelope.gain.linearRampToValueAtTime(Player.noZeroVolume(volume * n), when + duration)
                     break
                 }
                 lastTime = lastTime + ahdsr[i].duration
                 lastVolume = ahdsr[i].volume
-                envelope.gain.linearRampToValueAtTime(WebAudioFontPlayer.noZeroVolume(volume * lastVolume), when + lastTime)
+                envelope.gain.linearRampToValueAtTime(Player.noZeroVolume(volume * lastVolume), when + lastTime)
             }
         }
-        envelope.gain.linearRampToValueAtTime(WebAudioFontPlayer.noZeroVolume(0), when + duration + this.afterTime)
+        envelope.gain.linearRampToValueAtTime(Player.noZeroVolume(0), when + duration + this.afterTime)
     }
 
     static numValue(aValue, defValue) {
@@ -185,11 +185,11 @@ class WebAudioFontPlayer {
         }
     }
 
-    findEnvelope(audioContext, target/*, when , duration */) {
+    findEnvelope(ctx, target/*, when , duration */) {
         var envelope = null
         for (var i = 0; i < this.envelopes.length; i++) {
             var e = this.envelopes[i]
-            if (e.target == target && audioContext.currentTime > e.when + e.duration + 0.1) {
+            if (e.target == target && ctx.currentTime > e.when + e.duration + 0.1) {
                 try {
                     e.audioBufferSourceNode.disconnect()
                     e.audioBufferSourceNode.stop(0)
@@ -202,14 +202,14 @@ class WebAudioFontPlayer {
             }
         }
         if (!(envelope)) {
-            envelope = audioContext.createGain()
+            envelope = ctx.createGain()
             envelope.target = target
             envelope.connect(target)
             envelope.cancel = () => {
-                if (envelope.when + envelope.duration > audioContext.currentTime) {
+                if (envelope.when + envelope.duration > ctx.currentTime) {
                     envelope.gain.cancelScheduledValues(0)
-                    envelope.gain.setTargetAtTime(0.00001, audioContext.currentTime, 0.1)
-                    envelope.when = audioContext.currentTime + 0.00001
+                    envelope.gain.setTargetAtTime(0.00001, ctx.currentTime, 0.1)
+                    envelope.when = ctx.currentTime + 0.00001
                     envelope.duration = 0
                 }
             }
@@ -218,18 +218,18 @@ class WebAudioFontPlayer {
         return envelope
     }
 
-    static adjustPreset(audioContext, preset) {
+    static adjustPreset(ctx, preset) {
         for (var i = 0; i < preset.zones.length; i++) {
-            WebAudioFontPlayer.adjustZone(audioContext, preset.zones[i])
+            Player.adjustZone(ctx, preset.zones[i])
         }
     }
 
-    static adjustZone(audioContext, zone) {
+    static adjustZone(ctx, zone) {
         if (!zone.buffer) {
             zone.delay = 0
             if (zone.sample) {
                 const decoded = atob(zone.sample)
-                zone.buffer = audioContext.createBuffer(1, decoded.length / 2, zone.sampleRate)
+                zone.buffer = ctx.createBuffer(1, decoded.length / 2, zone.sampleRate)
                 var float32Array = zone.buffer.getChannelData(0)
                 var b1, b2, n
                 for (var i = 0; i < decoded.length / 2; i++) {
@@ -258,22 +258,22 @@ class WebAudioFontPlayer {
                         b = decoded.charCodeAt(i)
                         view[i] = b
                     }
-                    audioContext.decodeAudioData(arraybuffer, function (audioBuffer) {
+                    ctx.decodeAudioData(arraybuffer, function (audioBuffer) {
                         zone.buffer = audioBuffer
                     })
                 }
             }
-            zone.loopStart = WebAudioFontPlayer.numValue(zone.loopStart, 0)
-            zone.loopEnd = WebAudioFontPlayer.numValue(zone.loopEnd, 0)
-            zone.coarseTune = WebAudioFontPlayer.numValue(zone.coarseTune, 0)
-            zone.fineTune = WebAudioFontPlayer.numValue(zone.fineTune, 0)
-            zone.originalPitch = WebAudioFontPlayer.numValue(zone.originalPitch, 6000)
-            zone.sampleRate = WebAudioFontPlayer.numValue(zone.sampleRate, 44100)
-            zone.sustain = WebAudioFontPlayer.numValue(zone.originalPitch, 0)
+            zone.loopStart = Player.numValue(zone.loopStart, 0)
+            zone.loopEnd = Player.numValue(zone.loopEnd, 0)
+            zone.coarseTune = Player.numValue(zone.coarseTune, 0)
+            zone.fineTune = Player.numValue(zone.fineTune, 0)
+            zone.originalPitch = Player.numValue(zone.originalPitch, 6000)
+            zone.sampleRate = Player.numValue(zone.sampleRate, 44100)
+            zone.sustain = Player.numValue(zone.originalPitch, 0)
         }
     }
 
-    static findZone(audioContext, preset, pitch) {
+    static findZone(ctx, preset, pitch) {
         var zone = null
         for (var i = preset.zones.length - 1; i >= 0; i--) {
             zone = preset.zones[i]
@@ -282,18 +282,18 @@ class WebAudioFontPlayer {
             }
         }
         try {
-            WebAudioFontPlayer.adjustZone(audioContext, zone)
+            Player.adjustZone(ctx, zone)
         } catch (ex) {
             console.log('adjustZone', ex)
         }
         return zone
     }
 
-    cancelQueue(audioContext) {
+    cancelQueue(ctx) {
         for (var i = 0; i < this.envelopes.length; i++) {
             var e = this.envelopes[i]
             e.gain.cancelScheduledValues(0)
-            e.gain.setValueAtTime(WebAudioFontPlayer.nearZero, audioContext.currentTime)
+            e.gain.setValueAtTime(Player.nearZero, ctx.currentTime)
             e.when = -1
             try {
                 e.audioBufferSourceNode.disconnect()
@@ -304,11 +304,11 @@ class WebAudioFontPlayer {
     }
 }
 
-WebAudioFontPlayer.nearZero = 0.000001
+Player.nearZero = 0.000001
 
 if (typeof module === 'object' && module.exports) {
-    module.exports = WebAudioFontPlayer
+    module.exports = Player
 }
 if (typeof window !== 'undefined') {
-    window.WebAudioFontPlayer = WebAudioFontPlayer
+    window.WebAudioFontPlayer = Player
 }

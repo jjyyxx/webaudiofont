@@ -1,13 +1,12 @@
-class WebAudioFontChannel {
+class Channel {
     constructor(audioContext) {
         this.audioContext = audioContext
         this.input = this.audioContext.createDynamicsCompressor()
-        this.input.threshold.value = -3 //-50
-        this.input.knee.value = 30 //40
-        this.input.ratio.value = 12 //12
-        //this.input.reduction.value = -20; //-20
-        this.input.attack.value = 0.05 //0
-        this.input.release.value = 0.08 //0.25
+        this.input.threshold.value = -3
+        this.input.knee.value = 30
+        this.input.ratio.value = 12
+        this.input.attack.value = 0.05
+        this.input.release.value = 0.08
         this.band32 = this.bandEqualizer(this.input, 32)
         this.band64 = this.bandEqualizer(this.band32, 64)
         this.band128 = this.bandEqualizer(this.band64, 128)
@@ -34,8 +33,8 @@ class WebAudioFontChannel {
 }
 
 if (typeof module === 'object' && module.exports) {
-    module.exports = WebAudioFontChannel
+    module.exports = Channel
 }
 if (typeof window !== 'undefined') {
-    window.WebAudioFontChannel = WebAudioFontChannel
+    window.WebAudioFontChannel = Channel
 }
