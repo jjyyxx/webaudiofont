@@ -9,6 +9,7 @@ class Loader {
             const cache = localStorage.getItem(name)
             if (cache) {
                 window.fonts[name] = JSON.parse(cache)
+                this.player.constructor.adjustPreset(ctx, window.fonts[name])
             } else if (this.cached.indexOf(name) === -1) {
                 this.cached.push(name)
                 const response = await fetch(path, {
