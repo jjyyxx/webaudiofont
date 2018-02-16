@@ -7,9 +7,9 @@ class Loader {
     async load(ctx, path, name) {
         if (!(name in window.fonts)) {
             const cache = localStorage.getItem(name)
-            if (cache || this.cached.indexOf(name) !== -1) {
+            if (cache) {
                 window.fonts[name] = JSON.parse(cache)
-            } else {
+            } else if (this.cached.indexOf(name) === -1) {
                 this.cached.push(name)
                 const response = await fetch(path, {
                     mode: 'cors'
