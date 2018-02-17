@@ -24,7 +24,7 @@
 		"url": "https://github.com/surikov/webaudiofont"
 	},
 	"license": "MIT",
-	"main": "npm/src/player.js",
+	"main": "npm/src/index.js",
 	"devDependencies": {
 		"browserify": "^15.0.0",
 		"eslint-config-google": "^0.9.1"
