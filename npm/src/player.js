@@ -219,11 +219,7 @@ class Player {
     }
 
     static adjustPreset(ctx, preset) {
-        return Promise.all(preset.zones.map((zone) => Player.adjustZone(ctx, zone))).then((buffers) => {
-            buffers.forEach((buffer, index) => {
-                if (buffer) preset.zones[index].buffer = buffer
-            })
-        })
+        return Promise.all(preset.zones.map((zone) => Player.adjustZone(ctx, zone)))
     }
 
     static adjustZone(ctx, zone) {
@@ -266,7 +262,9 @@ class Player {
                     b = decoded.charCodeAt(i)
                     view[i] = b
                 }
-                return Player.decodeAudioData(ctx, zone, arraybuffer)
+                return Player.decodeAudioData(ctx, zone, arraybuffer).then((buffer) => {
+                    zone.buffer = buffer
+                })
             }
         }
     }
