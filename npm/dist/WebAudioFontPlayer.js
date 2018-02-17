@@ -52,7 +52,7 @@ class Loader {
             const cache = localStorage.getItem(name)
             if (cache) {
                 window.fonts[name] = JSON.parse(cache)
-                this.player.constructor.adjustPreset(ctx, window.fonts[name])
+                await this.player.constructor.adjustPreset(ctx, window.fonts[name])
             } else if (this.cached.indexOf(name) === -1) {
                 this.cached.push(name)
                 const response = await fetch(path, {
@@ -60,7 +60,7 @@ class Loader {
                 })
                 const json = await response.json()
                 localStorage.setItem(name, JSON.stringify(json))
-                this.player.constructor.adjustPreset(ctx, json)
+                await this.player.constructor.adjustPreset(ctx, json)
                 window.fonts[name] = json
             }
         }
@@ -298,14 +298,19 @@ class Player {
     }
 
     static adjustPreset(ctx, preset) {
-        for (var i = 0; i < preset.zones.length; i++) {
-            Player.adjustZone(ctx, preset.zones[i])
-        }
+        return Promise.all(preset.zones.map((zone) => Player.adjustZone(ctx, zone)))
     }
 
     static adjustZone(ctx, zone) {
         if (!zone.buffer) {
             zone.delay = 0
+            zone.loopStart = Player.numValue(zone.loopStart, 0)
+            zone.loopEnd = Player.numValue(zone.loopEnd, 0)
+            zone.coarseTune = Player.numValue(zone.coarseTune, 0)
+            zone.fineTune = Player.numValue(zone.fineTune, 0)
+            zone.originalPitch = Player.numValue(zone.originalPitch, 6000)
+            zone.sampleRate = Player.numValue(zone.sampleRate, 44100)
+            zone.sustain = Player.numValue(zone.originalPitch, 0)
             if (zone.sample) {
                 const decoded = atob(zone.sample)
                 zone.buffer = ctx.createBuffer(1, decoded.length / 2, zone.sampleRate)
@@ -326,30 +331,27 @@ class Player {
                     }
                     float32Array[i] = n / 65536.0
                 }
-            } else {
-                if (zone.file) {
-                    var datalen = zone.file.length
-                    var arraybuffer = new ArrayBuffer(datalen)
-                    var view = new Uint8Array(arraybuffer)
-                    const decoded = atob(zone.file)
-                    var b
-                    for (i = 0; i < decoded.length; i++) {
-                        b = decoded.charCodeAt(i)
-                        view[i] = b
-                    }
-                    ctx.decodeAudioData(arraybuffer, function (audioBuffer) {
-                        zone.buffer = audioBuffer
-                    })
+            } else if (zone.file) {
+                var datalen = zone.file.length
+                var arraybuffer = new ArrayBuffer(datalen)
+                var view = new Uint8Array(arraybuffer)
+                const decoded = atob(zone.file)
+                var b
+                for (i = 0; i < decoded.length; i++) {
+                    b = decoded.charCodeAt(i)
+                    view[i] = b
                 }
+                return Player.decodeAudioData(ctx, zone, arraybuffer).then((buffer) => {
+                    zone.buffer = buffer
+                })
             }
-            zone.loopStart = Player.numValue(zone.loopStart, 0)
-            zone.loopEnd = Player.numValue(zone.loopEnd, 0)
-            zone.coarseTune = Player.numValue(zone.coarseTune, 0)
-            zone.fineTune = Player.numValue(zone.fineTune, 0)
-            zone.originalPitch = Player.numValue(zone.originalPitch, 6000)
-            zone.sampleRate = Player.numValue(zone.sampleRate, 44100)
-            zone.sustain = Player.numValue(zone.originalPitch, 0)
         }
+    }
+
+    static decodeAudioData(ctx, zone, arraybuffer) {
+        return new Promise((resolve, reject) => {
+            ctx.decodeAudioData(arraybuffer, resolve, reject)
+        })
     }
 
     static findZone(ctx, preset, pitch) {
