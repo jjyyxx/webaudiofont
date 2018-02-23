@@ -5,21 +5,14 @@ class Loader {
     }
 
     async load(ctx, path, name) {
-        if (!(name in window.fonts)) {
-            const cache = localStorage.getItem(name)
-            if (cache) {
-                window.fonts[name] = JSON.parse(cache)
-                await this.player.constructor.adjustPreset(ctx, window.fonts[name])
-            } else if (this.cached.indexOf(name) === -1) {
-                this.cached.push(name)
-                const response = await fetch(path, {
-                    mode: 'cors'
-                })
-                const json = await response.json()
-                localStorage.setItem(name, JSON.stringify(json))
-                await this.player.constructor.adjustPreset(ctx, json)
-                window.fonts[name] = json
-            }
+        if ((!(name in window.fonts)) && (this.cached.indexOf(name) === -1)) {
+            this.cached.push(name)
+            const response = await fetch(path, {
+                mode: 'cors'
+            })
+            const json = await response.json()
+            await this.player.constructor.adjustPreset(ctx, json)
+            window.fonts[name] = json
         }
         return name
     }
